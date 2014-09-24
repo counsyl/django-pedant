@@ -1,0 +1,2 @@
+include *.md *.txt
+recursive-include pedant *.py *.html
