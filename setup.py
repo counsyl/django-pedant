@@ -1,5 +1,6 @@
 from setuptools import find_packages, setup
 
+from pip.download import PipSession
 from pip.req import parse_requirements
 
 from pedant import __version__
@@ -17,6 +18,7 @@ setup(
     packages=find_packages(),
     include_package_data=True,
     install_requires=[
-        str(ir.req) for ir in parse_requirements('./requirements.txt')],
+        str(ir.req) for ir in parse_requirements('./requirements.txt',
+                                                 session=PipSession())],
     zip_safe=False,
 )
