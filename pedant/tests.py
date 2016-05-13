@@ -18,6 +18,7 @@ from pedant.decorators import strict_resolve
 from pedant.decorators import _log_template_string_if_invalid
 from pedant.decorators import fail_on_template_errors
 from pedant.decorators import log_template_errors
+from pedant.decorators import patch_string_if_invalid
 from pedant.decorators import PedanticTemplateRenderingError
 from pedant.utils import PedanticTemplate
 from pedant.utils import PedanticTestCase
@@ -38,7 +39,7 @@ class TestMissingVariable(TestCase):
     success_context = Context({'a': '|'})
     failure_context = Context({})
 
-    @override_settings(TEMPLATE_STRING_IF_INVALID=' invalid ')
+    @patch_string_if_invalid(' invalid ')
     def test_log_base_decorator_failure_template_string(self):
         logger = Mock()
 
@@ -50,7 +51,7 @@ class TestMissingVariable(TestCase):
         self.assertTrue(logger.log.called, result)
         self.assertEqual(result, 'before invalid after')
 
-    @override_settings(TEMPLATE_STRING_IF_INVALID=' invalid %s ')
+    @patch_string_if_invalid(' invalid %s ')
     def test_log_base_decorator_failure_format_template_string(self):
         logger = Mock()
 
@@ -62,7 +63,7 @@ class TestMissingVariable(TestCase):
         self.assertTrue(logger.log.called, result)
         self.assertEqual(result, 'before invalid a after')
 
-    @override_settings(TEMPLATE_STRING_IF_INVALID='')
+    @patch_string_if_invalid('')
     def test_log_base_decorator_failure_empty_template_string(self):
         logger = Mock()
 
@@ -454,10 +455,10 @@ class TestLogDecorator(TestCase):
         self.assertTrue(logger1.log.called)
         self.assertFalse(logger2.log.called)
 
-    @override_settings(TEMPLATE_STRING_IF_INVALID='WTF is %s?')
+    @patch_string_if_invalid('WTF is %s?')
     def test_template_string_if_invalid_is_respected(self):
         """
-        Test log decorators include the original TEMPLATE_STRING_IF_INVALID.
+        Test log decorators include the original string_if_invalid.
         """
         template = Template('{{ a }}')
         original_render = template.render(Context())
@@ -472,10 +473,10 @@ class TestLogDecorator(TestCase):
         self.assertTrue(logger.log.called)
         self.assertEqual(logged_render, original_render)
 
-    @override_settings(TEMPLATE_STRING_IF_INVALID='WTF is %s?')
+    @patch_string_if_invalid('WTF is %s?')
     def test_nested_calls_respect_template_string_if_invalid(self):
         """
-        Test log decorators include the original TEMPLATE_STRING_IF_INVALID.
+        Test log decorators include the original string_if_invalid.
         """
         template = Template('{{ a }}')
         original_render = template.render(Context())
@@ -498,7 +499,7 @@ class TestLogDecorator(TestCase):
         self.assertEqual(logged_render, original_render)
 
     @skipIf(django.VERSION >= (1, 8), 'Not an issue as of Django 1.8')
-    @override_settings(TEMPLATE_STRING_IF_INVALID='Fixed String')
+    @patch_string_if_invalid('Fixed String')
     def test_render_incorrect_template(self):
         """
         Handle weird django behavior.
@@ -527,7 +528,7 @@ class TestLogDecorator(TestCase):
         self.assertTrue(logger.log.called)
 
     @skipIf(django.VERSION >= (1, 8), 'Not an issue as of Django 1.8')
-    @override_settings(TEMPLATE_STRING_IF_INVALID='Fixed String')
+    @patch_string_if_invalid('Fixed String')
     def test_contains_behavior(self):
         logger = Mock()
 
