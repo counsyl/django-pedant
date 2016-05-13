@@ -1,10 +1,12 @@
 import logging
+from unittest import skipIf
 
-from django.template import Context
-from django.template import FilterExpression
+import django
 from django.template import Library
-from django.template import Template
-from django.template import TemplateSyntaxError
+from django.template.base import Context
+from django.template.base import FilterExpression
+from django.template.base import Template
+from django.template.base import TemplateSyntaxError
 from django.test import TestCase
 from django.test.utils import override_settings
 from mock import Mock
@@ -485,6 +487,7 @@ class TestLogDecorator(TestCase):
         self.assertFalse(logger2.log.called)
         self.assertEqual(logged_render, original_render)
 
+    @skipIf(django.VERSION >= (1, 8), 'Not an issue as of Django 1.8')
     @override_settings(TEMPLATE_STRING_IF_INVALID='Fixed String')
     def test_render_incorrect_template(self):
         """
@@ -513,6 +516,7 @@ class TestLogDecorator(TestCase):
 
         self.assertTrue(logger.log.called)
 
+    @skipIf(django.VERSION >= (1, 8), 'Not an issue as of Django 1.8')
     @override_settings(TEMPLATE_STRING_IF_INVALID='Fixed String')
     def test_contains_behavior(self):
         logger = Mock()
@@ -539,6 +543,7 @@ class TestLogDecorator(TestCase):
 
 
 class TestPedanticTemplate(TestCase):
+    @skipIf(django.VERSION >= (1, 8), 'Not an issue as of Django 1.8')
     @override_settings(TEMPLATE_STRING_IF_INVALID='Fixed String')
     def test_render_incorrect_template(self):
         with patch('django.template.base.invalid_var_format_string', None), \
@@ -552,6 +557,7 @@ class TestPedanticTemplate(TestCase):
                 PedanticTemplate('{{ a }}').render(Context())
             PedanticTemplate('{{ a }}').render(Context({'a': 'a'}))
 
+    @skipIf(django.VERSION >= (1, 8), 'Not an issue as of Django 1.8')
     @override_settings(TEMPLATE_STRING_IF_INVALID='Fixed String')
     def test_contains_behavior(self):
         @fail_on_template_errors

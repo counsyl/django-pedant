@@ -1,10 +1,10 @@
 import logging
 
+import django
 from decorator import decorator
 from django.conf import settings
 from django.template.base import FilterExpression
 from django.template.base import VariableNode
-from django.template.debug import DebugVariableNode
 from django.utils.encoding import force_text
 from django.utils.formats import localize
 from django.utils.html import escape
@@ -113,6 +113,8 @@ def _patch_invalid_var_format_string(f):
     template before (in the same process) while *not* in the context of
     a log decorator.  See the implementation of
     django.template.base.FilterExpression.resolve
+
+    Note: This only affects version of Django below 1.8.
     """
     patcher = patch('django.template.base.invalid_var_format_string', True)
     return patcher(f)
@@ -138,6 +140,10 @@ def _always_strict_resolve(f):
 
 def __apply(arg, function):
     return function(arg)
+
+
+def _compose(f1, f2):
+    return lambda arg: f1(f2(arg))
 
 
 def debug_variable_node_render(self, context):
@@ -176,9 +182,13 @@ def _disallow_catching_UnicodeDecodeError(f):
     string is not UTF-8 or unicode.
     """
     patch_base = patch.object(VariableNode, 'render', variable_node_render)
-    patch_debug = patch.object(
-        DebugVariableNode, 'render', debug_variable_node_render)
-    return patch_base(patch_debug(f))
+    patch_all = patch_base
+    if django.VERSION[:3] < (1, 9):
+        from django.template.debug import DebugVariableNode
+        patch_debug = patch.object(
+            DebugVariableNode, 'render', debug_variable_node_render)
+        patch_all = _compose(patch_all, patch_debug)
+    return patch_all(f)
 
 
 def _log_unicode_errors(logger, log_level):
@@ -206,8 +216,13 @@ def _log_unicode_errors(logger, log_level):
         return ''
 
     patch_base = patch.object(VariableNode, 'render', log_render)
-    patch_debug = patch.object(DebugVariableNode, 'render', log_debug_render)
-    return lambda f: patch_base(patch_debug(f))
+    patch_all = patch_base
+    if django.VERSION[:3] < (1, 9):
+        from django.template.debug import DebugVariableNode
+        patch_debug = patch.object(DebugVariableNode, 'render',
+                                   log_debug_render)
+        patch_all = _compose(patch_all, patch_debug)
+    return lambda f: patch_all(f)
 
 
 @decorator
@@ -218,9 +233,10 @@ def fail_on_template_errors(f, *args, **kwargs):
     decorators = [
         _fail_template_string_if_invalid,
         _always_strict_resolve,
-        _patch_invalid_var_format_string,
         _disallow_catching_UnicodeDecodeError,
     ]
+    if django.VERSION[:3] < (1, 8):
+        decorators.append(_patch_invalid_var_format_string)
 
     return reduce(__apply, decorators, f)(*args, **kwargs)
 
@@ -243,8 +259,9 @@ def log_template_errors(logger, log_level=logging.ERROR):
         _log_template_string_if_invalid(logger, log_level),
         _log_unicode_errors(logger, log_level),
         _always_strict_resolve,
-        _patch_invalid_var_format_string,
     ]
+    if django.VERSION[:3] < (1, 8):
+        decorators.append(_patch_invalid_var_format_string)
 
     @decorator
     def function(f, *args, **kwargs):
