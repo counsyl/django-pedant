@@ -37,6 +37,14 @@ def patch_string_if_invalid(new):
         )
 
 
+def get_string_if_invalid():
+    if django.VERSION < (1, 8):
+        return settings.TEMPLATE_STRING_IF_INVALID
+    else:
+        from django.template import engines
+        return engines['django'].engine.string_if_invalid
+
+
 class PedanticTemplateRenderingError(Exception):
     pass
 
@@ -63,7 +71,7 @@ class FailInvalidVariableTemplate(object):
 
 class LogInvalidVariableTemplate(object):
     def __init__(self, logger, log_level):
-        template_string = settings.TEMPLATE_STRING_IF_INVALID
+        template_string = get_string_if_invalid()
         if isinstance(template_string, LogInvalidVariableTemplate):
             # If there are nested decorators, use the actual *string*, not the
             # other LogInvalidVariableTemplate object, since that could lead
