@@ -5,3 +5,4 @@ pep8==1.4.6
 pyflakes==0.7.3
 django-nose==1.4.3
 simplejson
+coverage
