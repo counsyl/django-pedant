@@ -2,6 +2,7 @@ import logging
 from unittest import skipIf
 
 import django
+from django.conf import settings
 from django.template import Library
 from django.template.base import Context
 from django.template.base import FilterExpression
@@ -21,6 +22,15 @@ from pedant.decorators import PedanticTemplateRenderingError
 from pedant.utils import PedanticTemplate
 from pedant.utils import PedanticTestCase
 from pedant.utils import PedanticTestCaseMixin
+
+
+def patch_builtins(library):
+    if django.VERSION[:3] < (1, 9):
+        return patch('django.template.base.builtins', [library])
+    else:
+        from django.template.engine import Engine
+        engine = Engine.get_default()
+        return patch.object(engine, 'template_builtins', [library])
 
 
 class TestMissingVariable(TestCase):
@@ -145,7 +155,7 @@ class TestCustomTagsAndFilters(TestCase):
         def fail_tag():
             raise FailError()
 
-        with patch('django.template.base.builtins', [register]):
+        with patch_builtins(register):
             with self.assertRaises(FailError):
                 Template('{% fail_tag %}').render(Context())
 
@@ -159,7 +169,7 @@ class TestCustomTagsAndFilters(TestCase):
         def fail_filter(arg):
             raise FailError()
 
-        with patch('django.template.base.builtins', [register]):
+        with patch_builtins(register):
             with self.assertRaises(FailError):
                 Template('{{ ""|fail_filter }}').render(Context())
 
@@ -297,7 +307,7 @@ class TestUnicodeDecodeError(TestCase):
         with self.assertRaises(UnicodeDecodeError):
             fail_filter('')
 
-        with patch('django.template.base.builtins', [register]):
+        with patch_builtins(register):
             template = Template('{{ a|fail_filter }}')
 
             @fail_on_template_errors
@@ -318,7 +328,7 @@ class TestUnicodeDecodeError(TestCase):
 
         logger = Mock()
 
-        with patch('django.template.base.builtins', [register]):
+        with patch_builtins(register):
             template = Template('{{ a|fail_filter }}')
 
             @log_template_errors(logger, logging.ERROR)
@@ -340,7 +350,7 @@ class TestUnicodeDecodeError(TestCase):
 
         logger = Mock()
 
-        with patch('django.template.base.builtins', [register]):
+        with patch_builtins(register):
             template = Template('{{ a|fail_filter }}')
 
             @log_template_errors(logger, logging.ERROR)
