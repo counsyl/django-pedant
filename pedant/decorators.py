@@ -218,7 +218,7 @@ def _log_unicode_errors(logger, log_level):
 
     def log_render(*args, **kwargs):
         try:
-            variable_node_render(*args, **kwargs)
+            return variable_node_render(*args, **kwargs)
         except UnicodeDecodeError:
             logger.log(
                 log_level,
