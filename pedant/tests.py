@@ -26,7 +26,7 @@ from pedant.utils import PedanticTestCaseMixin
 
 
 def patch_builtins(library):
-    if django.VERSION[:3] < (1, 9):
+    if django.VERSION < (1, 9):
         return patch('django.template.base.builtins', [library])
     else:
         from django.template.engine import Engine

@@ -202,7 +202,7 @@ def _disallow_catching_UnicodeDecodeError(f):
     """
     patch_base = patch.object(VariableNode, 'render', variable_node_render)
     patch_all = patch_base
-    if django.VERSION[:3] < (1, 9):
+    if django.VERSION < (1, 9):
         from django.template.debug import DebugVariableNode
         patch_debug = patch.object(
             DebugVariableNode, 'render', debug_variable_node_render)
@@ -236,7 +236,7 @@ def _log_unicode_errors(logger, log_level):
 
     patch_base = patch.object(VariableNode, 'render', log_render)
     patch_all = patch_base
-    if django.VERSION[:3] < (1, 9):
+    if django.VERSION < (1, 9):
         from django.template.debug import DebugVariableNode
         patch_debug = patch.object(DebugVariableNode, 'render',
                                    log_debug_render)
@@ -254,7 +254,7 @@ def fail_on_template_errors(f, *args, **kwargs):
         _always_strict_resolve,
         _disallow_catching_UnicodeDecodeError,
     ]
-    if django.VERSION[:3] < (1, 8):
+    if django.VERSION < (1, 8):
         decorators.append(_patch_invalid_var_format_string)
 
     return reduce(__apply, decorators, f)(*args, **kwargs)
@@ -279,7 +279,7 @@ def log_template_errors(logger, log_level=logging.ERROR):
         _log_unicode_errors(logger, log_level),
         _always_strict_resolve,
     ]
-    if django.VERSION[:3] < (1, 8):
+    if django.VERSION < (1, 8):
         decorators.append(_patch_invalid_var_format_string)
 
     @decorator
