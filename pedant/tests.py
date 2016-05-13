@@ -652,6 +652,16 @@ class TestIfDefTags(PedanticTestCase):
             Template(
                 "{% load pedant_tags %}\n{% ifdef a and b %}{% endifdef %}")
 
+    def test_ifdef_disallows_non_identifier_expressions_2(self):
+        with self.assertRaises(TemplateSyntaxError):
+            Template(
+                "{% load pedant_tags %}\n{% ifdef a|filter %}{% endifdef %}")
+
+    def test_elifdef_disallows_non_identifier_expressions(self):
+        with self.assertRaises(TemplateSyntaxError):
+            Template(
+                "{% load pedant_tags %}\n{% ifdef a %}{% elifdef a and b %}{% endifdef %}")
+
     def test_ifdef_follows_attributes(self):
         ifdef_template = Template(
             "{% load pedant_tags %}\n"
