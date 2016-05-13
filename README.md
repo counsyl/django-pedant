@@ -72,6 +72,6 @@ incur the transactional overhead of Django's test case (e.g. for unit tests).
 
 ## Test
 
-```
-make test
+```sh
+$ tox
 ```
