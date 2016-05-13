@@ -21,6 +21,22 @@ except ImportError:
         render_value_in_context  # pragma: no cover
 
 
+def patch_string_if_invalid(new):
+    if django.VERSION < (1, 8):
+        return patch.object(
+            settings,
+            'TEMPLATE_STRING_IF_INVALID',
+            new,
+        )
+    else:
+        from django.template import engines
+        return patch.object(
+            engines['django'].engine,
+            'string_if_invalid',
+            new,
+        )
+
+
 class PedanticTemplateRenderingError(Exception):
     pass
 
@@ -80,9 +96,7 @@ class LogInvalidVariableTemplate(object):
 
 
 def _fail_template_string_if_invalid(f):
-    patcher = patch.object(
-        settings, 'TEMPLATE_STRING_IF_INVALID', FailInvalidVariableTemplate())
-    return patcher(f)
+    return patch_string_if_invalid(FailInvalidVariableTemplate())(f)
 
 
 def _log_template_string_if_invalid(logger, log_level=logging.ERROR):
@@ -96,11 +110,8 @@ def _log_template_string_if_invalid(logger, log_level=logging.ERROR):
 
     Will log missing variables at INFO.  The default log_level is ERROR.
     """
-    patcher = patch.object(
-        settings,
-        'TEMPLATE_STRING_IF_INVALID',
+    return patch_string_if_invalid(
         LogInvalidVariableTemplate(logger, log_level))
-    return patcher
 
 
 def _patch_invalid_var_format_string(f):
