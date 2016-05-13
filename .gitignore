@@ -35,10 +35,5 @@ pip-log.txt
 .pydevproject
 .idea
 
-# Virtual environment
-venv
-.virtualenv
-
-
 # coverage cruft
 /cover

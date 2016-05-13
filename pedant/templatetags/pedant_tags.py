@@ -49,6 +49,8 @@ def ifdef(parser, token):
     block_tokens = ('elifdef', 'else', 'endifdef')
     # {% ifdef ... %}
     bits = token.split_contents()[1:]
+    if len(bits) > 1:
+        raise TemplateSyntaxError('%r is not an identifier.' % token)
     condition = IfDefParser(bits).parse()
     nodelist = parser.parse(block_tokens)
     conditions_nodelists = [(condition, nodelist)]
@@ -57,6 +59,8 @@ def ifdef(parser, token):
     # {% elifdef ... %} (repeatable)
     while token.contents.startswith('elifdef'):
         bits = token.split_contents()[1:]
+        if len(bits) > 1:
+            raise TemplateSyntaxError('%r is not an identifier.' % token)
         condition = IfDefParser(bits).parse()
         nodelist = parser.parse(block_tokens)
         conditions_nodelists.append((condition, nodelist))

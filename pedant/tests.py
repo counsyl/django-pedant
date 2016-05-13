@@ -1,10 +1,13 @@
 import logging
+from unittest import skipIf
 
-from django.template import Context
-from django.template import FilterExpression
+import django
+from django.conf import settings
 from django.template import Library
-from django.template import Template
-from django.template import TemplateSyntaxError
+from django.template.base import Context
+from django.template.base import FilterExpression
+from django.template.base import Template
+from django.template.base import TemplateSyntaxError
 from django.test import TestCase
 from django.test.utils import override_settings
 from mock import Mock
@@ -15,10 +18,20 @@ from pedant.decorators import strict_resolve
 from pedant.decorators import _log_template_string_if_invalid
 from pedant.decorators import fail_on_template_errors
 from pedant.decorators import log_template_errors
+from pedant.decorators import patch_string_if_invalid
 from pedant.decorators import PedanticTemplateRenderingError
 from pedant.utils import PedanticTemplate
 from pedant.utils import PedanticTestCase
 from pedant.utils import PedanticTestCaseMixin
+
+
+def patch_builtins(library):
+    if django.VERSION < (1, 9):
+        return patch('django.template.base.builtins', [library])
+    else:
+        from django.template.engine import Engine
+        engine = Engine.get_default()
+        return patch.object(engine, 'template_builtins', [library])
 
 
 class TestMissingVariable(TestCase):
@@ -26,7 +39,7 @@ class TestMissingVariable(TestCase):
     success_context = Context({'a': '|'})
     failure_context = Context({})
 
-    @override_settings(TEMPLATE_STRING_IF_INVALID=' invalid ')
+    @patch_string_if_invalid(' invalid ')
     def test_log_base_decorator_failure_template_string(self):
         logger = Mock()
 
@@ -38,7 +51,7 @@ class TestMissingVariable(TestCase):
         self.assertTrue(logger.log.called, result)
         self.assertEqual(result, 'before invalid after')
 
-    @override_settings(TEMPLATE_STRING_IF_INVALID=' invalid %s ')
+    @patch_string_if_invalid(' invalid %s ')
     def test_log_base_decorator_failure_format_template_string(self):
         logger = Mock()
 
@@ -50,7 +63,7 @@ class TestMissingVariable(TestCase):
         self.assertTrue(logger.log.called, result)
         self.assertEqual(result, 'before invalid a after')
 
-    @override_settings(TEMPLATE_STRING_IF_INVALID='')
+    @patch_string_if_invalid('')
     def test_log_base_decorator_failure_empty_template_string(self):
         logger = Mock()
 
@@ -143,7 +156,7 @@ class TestCustomTagsAndFilters(TestCase):
         def fail_tag():
             raise FailError()
 
-        with patch('django.template.base.builtins', [register]):
+        with patch_builtins(register):
             with self.assertRaises(FailError):
                 Template('{% fail_tag %}').render(Context())
 
@@ -157,7 +170,7 @@ class TestCustomTagsAndFilters(TestCase):
         def fail_filter(arg):
             raise FailError()
 
-        with patch('django.template.base.builtins', [register]):
+        with patch_builtins(register):
             with self.assertRaises(FailError):
                 Template('{{ ""|fail_filter }}').render(Context())
 
@@ -295,7 +308,7 @@ class TestUnicodeDecodeError(TestCase):
         with self.assertRaises(UnicodeDecodeError):
             fail_filter('')
 
-        with patch('django.template.base.builtins', [register]):
+        with patch_builtins(register):
             template = Template('{{ a|fail_filter }}')
 
             @fail_on_template_errors
@@ -316,7 +329,7 @@ class TestUnicodeDecodeError(TestCase):
 
         logger = Mock()
 
-        with patch('django.template.base.builtins', [register]):
+        with patch_builtins(register):
             template = Template('{{ a|fail_filter }}')
 
             @log_template_errors(logger, logging.ERROR)
@@ -338,7 +351,7 @@ class TestUnicodeDecodeError(TestCase):
 
         logger = Mock()
 
-        with patch('django.template.base.builtins', [register]):
+        with patch_builtins(register):
             template = Template('{{ a|fail_filter }}')
 
             @log_template_errors(logger, logging.ERROR)
@@ -442,10 +455,10 @@ class TestLogDecorator(TestCase):
         self.assertTrue(logger1.log.called)
         self.assertFalse(logger2.log.called)
 
-    @override_settings(TEMPLATE_STRING_IF_INVALID='WTF is %s?')
+    @patch_string_if_invalid('WTF is %s?')
     def test_template_string_if_invalid_is_respected(self):
         """
-        Test log decorators include the original TEMPLATE_STRING_IF_INVALID.
+        Test log decorators include the original string_if_invalid.
         """
         template = Template('{{ a }}')
         original_render = template.render(Context())
@@ -460,10 +473,10 @@ class TestLogDecorator(TestCase):
         self.assertTrue(logger.log.called)
         self.assertEqual(logged_render, original_render)
 
-    @override_settings(TEMPLATE_STRING_IF_INVALID='WTF is %s?')
+    @patch_string_if_invalid('WTF is %s?')
     def test_nested_calls_respect_template_string_if_invalid(self):
         """
-        Test log decorators include the original TEMPLATE_STRING_IF_INVALID.
+        Test log decorators include the original string_if_invalid.
         """
         template = Template('{{ a }}')
         original_render = template.render(Context())
@@ -485,7 +498,8 @@ class TestLogDecorator(TestCase):
         self.assertFalse(logger2.log.called)
         self.assertEqual(logged_render, original_render)
 
-    @override_settings(TEMPLATE_STRING_IF_INVALID='Fixed String')
+    @skipIf(django.VERSION >= (1, 8), 'Not an issue as of Django 1.8')
+    @patch_string_if_invalid('Fixed String')
     def test_render_incorrect_template(self):
         """
         Handle weird django behavior.
@@ -513,7 +527,8 @@ class TestLogDecorator(TestCase):
 
         self.assertTrue(logger.log.called)
 
-    @override_settings(TEMPLATE_STRING_IF_INVALID='Fixed String')
+    @skipIf(django.VERSION >= (1, 8), 'Not an issue as of Django 1.8')
+    @patch_string_if_invalid('Fixed String')
     def test_contains_behavior(self):
         logger = Mock()
 
@@ -539,6 +554,7 @@ class TestLogDecorator(TestCase):
 
 
 class TestPedanticTemplate(TestCase):
+    @skipIf(django.VERSION >= (1, 8), 'Not an issue as of Django 1.8')
     @override_settings(TEMPLATE_STRING_IF_INVALID='Fixed String')
     def test_render_incorrect_template(self):
         with patch('django.template.base.invalid_var_format_string', None), \
@@ -552,6 +568,7 @@ class TestPedanticTemplate(TestCase):
                 PedanticTemplate('{{ a }}').render(Context())
             PedanticTemplate('{{ a }}').render(Context({'a': 'a'}))
 
+    @skipIf(django.VERSION >= (1, 8), 'Not an issue as of Django 1.8')
     @override_settings(TEMPLATE_STRING_IF_INVALID='Fixed String')
     def test_contains_behavior(self):
         @fail_on_template_errors
@@ -634,6 +651,16 @@ class TestIfDefTags(PedanticTestCase):
         with self.assertRaises(TemplateSyntaxError):
             Template(
                 "{% load pedant_tags %}\n{% ifdef a and b %}{% endifdef %}")
+
+    def test_ifdef_disallows_non_identifier_expressions_2(self):
+        with self.assertRaises(TemplateSyntaxError):
+            Template(
+                "{% load pedant_tags %}\n{% ifdef a|filter %}{% endifdef %}")
+
+    def test_elifdef_disallows_non_identifier_expressions(self):
+        with self.assertRaises(TemplateSyntaxError):
+            Template(
+                "{% load pedant_tags %}\n{% ifdef a %}{% elifdef a and b %}{% endifdef %}")
 
     def test_ifdef_follows_attributes(self):
         ifdef_template = Template(

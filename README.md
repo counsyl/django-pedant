@@ -72,8 +72,6 @@ incur the transactional overhead of Django's test case (e.g. for unit tests).
 
 ## Test
 
-```
-NOSE_COVER_MIN_PERCENTAGE=100 django-admin.py test \
-    --with-xunit --with-doctest --settings=settings_test \
-    --with-coverage --cover-package=pedant --cover-html
+```sh
+$ tox
 ```
