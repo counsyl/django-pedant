@@ -40,7 +40,7 @@ def my_view(request):
 If there are errors in `foo.html`, the view will now raise a `PedanticTemplateRenderingError`
 if there were any errors in rendering the template that Django swallows.
 
-To simply *log* if there are template failures, you can use the `log_on_template_errors` decorator:
+To simply *log* if there are template failures, you can use the `log_template_errors` decorator:
 ```python
 import logging
 
@@ -48,7 +48,7 @@ from pedant.decorators import log_on_template_errors
 
 logger = logging.getLogger('myapp.views')
 
-@log_on_template_errors(logger, log_level=logging.INFO)
+@log_template_errors(logger, log_level=logging.INFO)
 def my_view(request):
     # [...]
     return render_to_string('foo.html')
