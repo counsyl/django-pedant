@@ -1,0 +1,10 @@
+[run]
+parallel = True
+branch = True
+source = pedant
+
+[report]
+fail_under = 99
+show_missing = True
+exclude_lines =
+    pass

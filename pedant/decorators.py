@@ -4,6 +4,7 @@ import django
 from decorator import decorator
 from django.conf import settings
 from django.template.base import FilterExpression
+from django.template.base import render_value_in_context
 from django.template.base import VariableNode
 from django.utils.encoding import force_text
 from django.utils.formats import localize
@@ -12,13 +13,6 @@ from django.utils.safestring import EscapeData
 from django.utils.safestring import SafeData
 from django.utils.timezone import template_localtime
 from mock import patch
-
-try:
-    from django.template.base import render_value_in_context
-except ImportError:
-    # Django 1.6+ made this a private method
-    from django.template.base import _render_value_in_context as \
-        render_value_in_context  # pragma: no cover
 
 
 def patch_string_if_invalid(new):
