@@ -2,7 +2,6 @@ import logging
 from unittest import skipIf
 
 import django
-from django.conf import settings
 from django.template import Library
 from django.template.base import Context
 from django.template.base import FilterExpression
@@ -660,7 +659,7 @@ class TestIfDefTags(PedanticTestCase):
     def test_elifdef_disallows_non_identifier_expressions(self):
         with self.assertRaises(TemplateSyntaxError):
             Template(
-                "{% load pedant_tags %}\n{% ifdef a %}{% elifdef a and b %}{% endifdef %}")
+                "{% load pedant_tags %}\n{% ifdef a %}{% elifdef a and b %}{% endifdef %}")  # nopep8
 
     def test_ifdef_follows_attributes(self):
         ifdef_template = Template(
