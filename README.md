@@ -44,7 +44,7 @@ To simply *log* if there are template failures, you can use the `log_template_er
 ```python
 import logging
 
-from pedant.decorators import log_on_template_errors
+from pedant.decorators import log_template_errors
 
 logger = logging.getLogger('myapp.views')
 
